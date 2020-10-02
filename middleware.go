@@ -20,6 +20,7 @@ func filterMiddleware() http.HandlerFunc {
 
 		// Инициализация канала готовности и передача его по цепи запросов в контекст
 		ready := make(chan bool)
+
 		ctx := context.WithValue(r.Context(), "ready", ready)
 		req := r.WithContext(ctx)
 		// Поиск хандлера среди маршрутов

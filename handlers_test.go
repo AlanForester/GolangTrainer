@@ -17,7 +17,7 @@ func TestSadPath(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handler := defaultHandler()
+	handler := http.HandlerFunc(defaultHandler)
 
 	handler.ServeHTTP(rr, req)
 
@@ -30,7 +30,7 @@ func TestSadPath(t *testing.T) {
 }
 
 func TestHappyPath(t *testing.T) {
-	handler := timeoutHandler()
+	handler := filterMiddleware()
 	res := httptest.NewRecorder()
 	form := url.Values{
 		"timeout": []string{"100"},
@@ -38,7 +38,6 @@ func TestHappyPath(t *testing.T) {
 	js, _ := json.Marshal(form)
 	req := httptest.NewRequest("POST", "/api/slow", bytes.NewReader(js))
 	req.Header.Add("Content-Type", "application/json")
-
 	handler.ServeHTTP(res, req)
 
 	got := res.Code

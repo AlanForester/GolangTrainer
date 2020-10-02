@@ -16,9 +16,6 @@ type body struct {
 
 func slowHandle(w http.ResponseWriter, r *http.Request) {
 
-	// Достаем с контекста канал для уведомления завершения функции
-	ready := r.Context().Value("ready").(chan bool)
-
 	// Обрабатываем на пост методе
 	if r.Method == "POST" {
 		// Селектор для выбора маршрута
@@ -52,7 +49,10 @@ func slowHandle(w http.ResponseWriter, r *http.Request) {
 			select {
 			case <-timer.C:
 				// Таймер сработал, передаем сообщение о успехе
-				ready <- true
+				// Достаем с контекста канал для уведомления завершения функции
+				if ch, ok := r.Context().Value("ready").(chan bool); ok {
+					ch <- true
+				}
 			}
 			return
 		}

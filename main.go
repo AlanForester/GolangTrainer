@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -15,7 +16,7 @@ const (
 )
 
 type body struct {
-	Timeout int64 `json:"timeout"`
+	Timeout interface{} `json:"timeout"`
 }
 
 func slowHandle(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +45,15 @@ func slowHandle(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			timer := time.NewTimer(time.Duration(b.Timeout) * time.Millisecond)
+			var timeout time.Duration
+			switch tm := b.Timeout.(type) {
+			case int64:
+				timeout = time.Duration(tm) * time.Millisecond
+			case string:
+				convTm, _ := strconv.Atoi(tm)
+				timeout = time.Duration(convTm) * time.Millisecond
+			}
+			timer := time.NewTimer(timeout)
 
 			select {
 			case <-timer.C:

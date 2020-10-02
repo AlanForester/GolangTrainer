@@ -67,40 +67,46 @@ func timeoutHandler() http.HandlerFunc {
 		ctx := context.WithValue(r.Context(), "ready", ready)
 		req := r.WithContext(ctx)
 
-		go http.HandlerFunc(slowHandle).ServeHTTP(w, req)
+		handler, p := http.DefaultServeMux.Handler(r)
 
-		dead := time.NewTimer(time.Duration(5 * time.Second))
+		go handler.ServeHTTP(w, req)
 
-		select {
-		case <-dead.C:
-			w.WriteHeader(400)
-			resp, err := json.Marshal(map[string]string{
-				"error": "timeout too long",
-			})
-			if err != nil {
-				http.Error(w, "", 404)
+		if p != "/" { // Not fp
+
+			dead := time.NewTimer(time.Duration(5 * time.Second))
+
+			select {
+			case <-dead.C:
+				w.WriteHeader(400)
+				resp, err := json.Marshal(map[string]string{
+					"error": "timeout too long",
+				})
+				if err != nil {
+					http.Error(w, "", 404)
+					return
+				}
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write(resp)
+				return
+			case <-ready:
+				resp, err := json.Marshal(map[string]string{
+					"status": "ok",
+				})
+				if err != nil {
+					http.Error(w, "", 404)
+					return
+				}
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write(resp)
 				return
 			}
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write(resp)
-			return
-		case <-ready:
-			resp, err := json.Marshal(map[string]string{
-				"status": "ok",
-			})
-			if err != nil {
-				http.Error(w, "", 404)
-				return
-			}
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write(resp)
-			return
 		}
 	}
 }
 
-func defaultHandler() http.Handler {
-	return filterMiddleware()
+func defaultHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(404)
+	_, _ = w.Write(nil)
 }
 
 func filterMiddleware() http.Handler {
@@ -112,14 +118,14 @@ func filterMiddleware() http.Handler {
 
 func main() {
 
-	//mux.HandleFunc("/", defaultHandle(mux))
 	//filter := http.TimeoutHandler(filterMiddleware(http.HandlerFunc(slowHandle)), maxExecTime, "")
 	http.HandleFunc("/api/slow", slowHandle)
+	http.HandleFunc("/", defaultHandler)
 	//mux.HandleFunc("/api/slow", slowHandle(mux))
 
 	srv := http.Server{
 		Addr:    ":8080",
-		Handler: defaultHandler(),
+		Handler: filterMiddleware(),
 	}
 
 	defer srv.Close()

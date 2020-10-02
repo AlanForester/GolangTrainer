@@ -19,14 +19,8 @@ func slowHandle(w http.ResponseWriter, r *http.Request) {
 	// Достаем с контекста канал для уведомления завершения функции
 	ready := r.Context().Value("ready").(chan bool)
 
-	if r.Header.Get("Content-Type") != "application/json" {
-		http.Error(w, "", 404)
-		return
-	}
-
 	// Обрабатываем на пост методе
 	if r.Method == "POST" {
-
 		// Селектор для выбора маршрута
 		switch r.URL.Path {
 		case "/api/slow":
@@ -60,13 +54,17 @@ func slowHandle(w http.ResponseWriter, r *http.Request) {
 				// Таймер сработал, передаем сообщение о успехе
 				ready <- false
 			}
-
 			return
 		}
 	}
+
+	http.Error(w, "", 404)
 }
 
+// Обработчик по умолчанию
+// Если маршрут не будет найден то отдаем 404 с пустым телом
 func defaultHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(404)
 	_, _ = w.Write(nil)
+	return
 }

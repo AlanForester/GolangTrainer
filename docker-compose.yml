@@ -1,0 +1,11 @@
+version: '3.5'
+services:
+  slowly:
+    build:
+      args:
+        - ENV=dev
+      context: .
+    image: slowly
+    container_name: slowly-box
+    ports:
+      - "8080:8080"

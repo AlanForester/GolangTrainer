@@ -19,6 +19,7 @@ func main() {
 		Handler: filterMiddleware(mux),
 	}
 
+	// Закрытие сервера после остановки приложения
 	defer func() {
 		_ = srv.Close()
 	}()

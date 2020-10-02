@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -18,6 +19,7 @@ func slowHandle(w http.ResponseWriter, r *http.Request) {
 
 	// Обрабатываем на пост методе
 	if r.Method == "POST" {
+
 		// Селектор для выбора маршрута
 		switch r.URL.Path {
 		case "/api/slow":
@@ -26,6 +28,7 @@ func slowHandle(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "", 404)
 				return
 			}
+
 			var b body
 			err = json.Unmarshal(bd, &b)
 			if err != nil {
@@ -36,10 +39,13 @@ func slowHandle(w http.ResponseWriter, r *http.Request) {
 			var timeout time.Duration
 			// Определяем тип входящего параметра таймаут
 			switch tm := b.Timeout.(type) {
-			case int64:
+			case float64:
 				timeout = time.Duration(tm) * time.Millisecond
 			case string:
-				convTm, _ := strconv.Atoi(tm)
+				convTm, err := strconv.Atoi(tm)
+				if err != nil {
+					log.Printf("Errpr: %v", err)
+				}
 				timeout = time.Duration(convTm) * time.Millisecond
 			}
 
@@ -51,6 +57,7 @@ func slowHandle(w http.ResponseWriter, r *http.Request) {
 				// Таймер сработал, передаем сообщение о успехе
 				// Достаем с контекста канал для уведомления завершения функции
 				if ch, ok := r.Context().Value("ready").(chan bool); ok {
+					// Отправляем в канал статус "найдено"
 					ch <- true
 				}
 			}
@@ -64,7 +71,9 @@ func slowHandle(w http.ResponseWriter, r *http.Request) {
 // Обработчик по умолчанию
 // Если маршрут не будет найден то отдаем 404 с пустым телом
 func defaultHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(404)
-	_, _ = w.Write(nil)
+	if ch, ok := r.Context().Value("ready").(chan bool); ok {
+		// Отправляем в канал статус "не найдено"
+		ch <- false
+	}
 	return
 }

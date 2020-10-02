@@ -10,17 +10,18 @@ import (
 )
 
 func TestSadPath(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.Handle("/", http.HandlerFunc(defaultHandler))
 
-	req, err := http.NewRequest("GET", "/api/slow", nil)
+	req, err := http.NewRequest("GET", "/api", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(defaultHandler)
+	handler := filterMiddleware(mux)
 
 	handler.ServeHTTP(rr, req)
-
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusNotFound {
 		t.Errorf("handler returned wrong status code: got %v want %v",
@@ -30,14 +31,19 @@ func TestSadPath(t *testing.T) {
 }
 
 func TestHappyPath(t *testing.T) {
-	handler := filterMiddleware()
+	mux := http.NewServeMux()
+	mux.Handle("/api/slow", http.HandlerFunc(slowHandle))
+
+	handler := filterMiddleware(mux)
 	res := httptest.NewRecorder()
 	form := url.Values{
-		"timeout": []string{"100"},
+		"timeout": []string{"1000"},
 	}
+
 	js, _ := json.Marshal(form)
 	req := httptest.NewRequest("POST", "/api/slow", bytes.NewReader(js))
 	req.Header.Add("Content-Type", "application/json")
+
 	handler.ServeHTTP(res, req)
 
 	got := res.Code

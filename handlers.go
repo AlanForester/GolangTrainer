@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -63,50 +62,6 @@ func slowHandle(w http.ResponseWriter, r *http.Request) {
 			}
 
 			return
-		}
-	}
-}
-
-func timeoutHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ready := make(chan bool)
-
-		ctx := context.WithValue(r.Context(), "ready", ready)
-		req := r.WithContext(ctx)
-
-		handler, p := http.DefaultServeMux.Handler(r)
-
-		go handler.ServeHTTP(w, req)
-
-		if p != "/" { // Not fp
-
-			dead := time.NewTimer(time.Duration(5 * time.Second))
-
-			select {
-			case <-dead.C:
-				w.WriteHeader(400)
-				resp, err := json.Marshal(map[string]string{
-					"error": "timeout too long",
-				})
-				if err != nil {
-					http.Error(w, "", 404)
-					return
-				}
-				w.Header().Set("Content-Type", "application/json")
-				_, _ = w.Write(resp)
-				return
-			case <-ready:
-				resp, err := json.Marshal(map[string]string{
-					"status": "ok",
-				})
-				if err != nil {
-					http.Error(w, "", 404)
-					return
-				}
-				w.Header().Set("Content-Type", "application/json")
-				_, _ = w.Write(resp)
-				return
-			}
 		}
 	}
 }

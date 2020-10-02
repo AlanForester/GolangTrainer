@@ -10,22 +10,17 @@ import (
 	"time"
 )
 
-const (
-	maxExecTime = 10 * time.Second
-	reqConType  = "application/json"
-)
-
 type body struct {
 	Timeout interface{} `json:"timeout"`
 }
 
 func slowHandle(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+	//defer r.Body.Close()
 
 	ready := r.Context().Value("ready").(chan bool)
 	//w.WriteHeader(200)
 
-	if r.Header.Get("Content-Type") != reqConType {
+	if r.Header.Get("Content-Type") != "application/json" {
 		http.Error(w, "", 404)
 		return
 	}
@@ -72,9 +67,9 @@ func timeoutHandler() http.HandlerFunc {
 		ctx := context.WithValue(r.Context(), "ready", ready)
 		req := r.WithContext(ctx)
 
-		go http.DefaultServeMux.ServeHTTP(w, req)
+		go http.HandlerFunc(slowHandle).ServeHTTP(w, req)
 
-		dead := time.NewTimer(time.Duration(maxExecTime))
+		dead := time.NewTimer(time.Duration(5 * time.Second))
 
 		select {
 		case <-dead.C:
@@ -86,7 +81,7 @@ func timeoutHandler() http.HandlerFunc {
 				http.Error(w, "", 404)
 				return
 			}
-			w.Header().Set("Content-Type", reqConType)
+			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write(resp)
 			return
 		case <-ready:
@@ -97,7 +92,7 @@ func timeoutHandler() http.HandlerFunc {
 				http.Error(w, "", 404)
 				return
 			}
-			w.Header().Set("Content-Type", reqConType)
+			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write(resp)
 			return
 		}

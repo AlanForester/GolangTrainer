@@ -40,6 +40,39 @@ Content-Type: application/json
 После того, как вы напишите код, мы предлагаем вам потренироваться в роли преподавателя/тренера и попробовать ответить на те вопросы, которые задают студенты (мы пришлём эти вопросы вам в ответ на ваш код). Обратите внимание, что студенты не знают терминологии, не учились на программистов (у них вообще может не быть высшего образования). Поэтому при ответе объясняйте так, как объясняли бы студентам.
 
 Понятность и доступность вашего объяснения - ключевое для нас.
+# Эксплуатация
+### Настройка
+```go
+go install ./...
+```
+
+### Запуск
+```go
+go run main.go
+```
+
+### Проверка и тесты
+```bash
+go test
+
+curl -X "POST" "http://localhost:8080/api/slow" \
+     -H 'Content-Type: application/json' \
+     -H 'Accept-Encoding: gzip, zlib, deflate, zstd, br' \
+     -d $'{
+  "timeout": 6000
+}'
+
+curl -X "POST" "http://localhost:8080/api/slow" \
+     -H 'Content-Type: application/json' \
+     -H 'Accept-Encoding: gzip, zlib, deflate, zstd, br' \
+     -d $'{
+  "timeout": 1000
+}'
+
+curl -X "GET" "http://localhost:8080/api/slow" \
+     -H 'Accept-Encoding: gzip, zlib, deflate, zstd, br' 
+
+```
 
 # Описание функционала
 Сначала требуется запустить сервер для получения запросов от клиентов и прописать нужные маршруты.

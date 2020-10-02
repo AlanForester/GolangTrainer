@@ -52,7 +52,7 @@ func slowHandle(w http.ResponseWriter, r *http.Request) {
 			select {
 			case <-timer.C:
 				// Таймер сработал, передаем сообщение о успехе
-				ready <- false
+				ready <- true
 			}
 			return
 		}

@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	maxExecTime = 5 * time.Second
+	maxExecTime = 10 * time.Second
 	reqConType  = "application/json"
 )
 
@@ -35,13 +35,13 @@ func slowHandle(w http.ResponseWriter, r *http.Request) {
 		case "/api/slow":
 			bd, err := ioutil.ReadAll(r.Body)
 			if err != nil {
-				http.Error(w, "1", 404)
+				http.Error(w, "", 404)
 				return
 			}
 			var b body
 			err = json.Unmarshal(bd, &b)
 			if err != nil {
-				http.Error(w, "2", 404)
+				http.Error(w, "", 404)
 				return
 			}
 
@@ -83,7 +83,7 @@ func timeoutHandler() http.HandlerFunc {
 				"error": "timeout too long",
 			})
 			if err != nil {
-				http.Error(w, "3", 404)
+				http.Error(w, "", 404)
 				return
 			}
 			w.Header().Set("Content-Type", reqConType)
@@ -94,7 +94,7 @@ func timeoutHandler() http.HandlerFunc {
 				"status": "ok",
 			})
 			if err != nil {
-				http.Error(w, "3", 404)
+				http.Error(w, "", 404)
 				return
 			}
 			w.Header().Set("Content-Type", reqConType)
